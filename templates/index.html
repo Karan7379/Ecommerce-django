@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Fraud Detection System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .alert-card {
+            border-left: 4px solid #dc3545;
+            margin-bottom: 1rem;
+        }
+        .alert-card.low { border-left-color: #ffc107; }
+        .alert-card.medium { border-left-color: #fd7e14; }
+        .alert-card.high { border-left-color: #dc3545; }
+        .alert-card.critical { border-left-color: #6f42c1; }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-card.success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        
+        .stat-card.warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .stat-card.danger {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .nav-pills .nav-link.active {
+            background-color: #667eea;
+        }
+        
+        .tab-content {
+            padding: 2rem 0;
+        }
+        
+        .analysis-result {
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        
+        .analysis-result.scam {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .analysis-result.safe {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .risk-badge {
+            font-size: 0.8rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+        }
+        
+        .risk-badge.minimal { background-color: #28a745; color: white; }
+        .risk-badge.low { background-color: #ffc107; color: black; }
+        .risk-badge.medium { background-color: #fd7e14; color: white; }
+        .risk-badge.high { background-color: #dc3545; color: white; }
+        .risk-badge.critical { background-color: #6f42c1; color: white; }
+        
+        .loading {
+            display: none;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .recommendation {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .keyword-highlight {
+            background-color: #fff3cd;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-shield-alt"></i> Digital Fraud Detection System
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text">
+                    <i class="fas fa-circle text-success"></i> System Online
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-tachometer-alt"></i> Dashboard</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="nav nav-pills flex-column" id="sidebar-nav">
+                            <li class="nav-item">
+                                <a class="nav-link active" href="#overview" data-bs-toggle="pill">
+                                    <i class="fas fa-chart-pie"></i> Overview
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#analyze" data-bs-toggle="pill">
+                                    <i class="fas fa-search"></i> Analyze
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#alerts" data-bs-toggle="pill">
+                                    <i class="fas fa-bell"></i> Alerts
+                                    <span class="badge bg-danger ms-2" id="alert-count">0</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#statistics" data-bs-toggle="pill">
+                                    <i class="fas fa-chart-bar"></i> Statistics
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#settings" data-bs-toggle="pill">
+                                    <i class="fas fa-cog"></i> Settings
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9">
+                <div class="tab-content">
+                    <!-- Overview Tab -->
+                    <div class="tab-pane fade show active" id="overview">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="stat-card success">
+                                    <h3 id="total-processed">0</h3>
+                                    <p>Total Processed</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card warning">
+                                    <h3 id="scams-detected">0</h3>
+                                    <p>Scams Detected</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card danger">
+                                    <h3 id="active-alerts">0</h3>
+                                    <p>Active Alerts</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <h3 id="system-uptime">0h</h3>
+                                    <p>System Uptime</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5>Recent Alerts</h5>
+                                    </div>
+                                    <div class="card-body" id="recent-alerts">
+                                        <p class="text-muted">No recent alerts</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5>System Status</h5>
+                                    </div>
+                                    <div class="card-body" id="system-status">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Text Analysis</span>
+                                            <span class="badge bg-success">Active</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span>Audio Analysis</span>
+                                            <span class="badge bg-success">Active</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span>Video Analysis</span>
+                                            <span class="badge bg-success">Active</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span>Alert System</span>
+                                            <span class="badge bg-success">Active</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analyze Tab -->
+                    <div class="tab-pane fade" id="analyze">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-search"></i> Communication Analysis</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="nav nav-tabs" id="analyze-tabs">
+                                    <li class="nav-item">
+                                        <a class="nav-link active" href="#text-analysis" data-bs-toggle="tab">Text</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="#audio-analysis" data-bs-toggle="tab">Audio</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="#video-analysis" data-bs-toggle="tab">Video</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="#batch-analysis" data-bs-toggle="tab">Batch</a>
+                                    </li>
+                                </ul>
+
+                                <div class="tab-content mt-3">
+                                    <!-- Text Analysis -->
+                                    <div class="tab-pane fade show active" id="text-analysis">
+                                        <form id="text-form">
+                                            <div class="mb-3">
+                                                <label for="text-content" class="form-label">Text Content</label>
+                                                <textarea class="form-control" id="text-content" rows="4" 
+                                                         placeholder="Enter text to analyze..."></textarea>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="text-sender" class="form-label">Sender</label>
+                                                        <input type="text" class="form-control" id="text-sender" 
+                                                               placeholder="Phone number or email">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="text-channel" class="form-label">Channel</label>
+                                                        <select class="form-select" id="text-channel">
+                                                            <option value="sms">SMS</option>
+                                                            <option value="email">Email</option>
+                                                            <option value="whatsapp">WhatsApp</option>
+                                                            <option value="social">Social Media</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-search"></i> Analyze Text
+                                            </button>
+                                        </form>
+                                        <div id="text-result"></div>
+                                    </div>
+
+                                    <!-- Audio Analysis -->
+                                    <div class="tab-pane fade" id="audio-analysis">
+                                        <form id="audio-form">
+                                            <div class="mb-3">
+                                                <label for="audio-caller" class="form-label">Caller ID</label>
+                                                <input type="text" class="form-control" id="audio-caller" 
+                                                       placeholder="Phone number">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="audio-duration" class="form-label">Duration (seconds)</label>
+                                                <input type="number" class="form-control" id="audio-duration" 
+                                                       placeholder="Call duration">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="audio-file" class="form-label">Audio File (optional)</label>
+                                                <input type="file" class="form-control" id="audio-file" 
+                                                       accept=".wav,.mp3,.m4a,.flac">
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-microphone"></i> Analyze Audio
+                                            </button>
+                                        </form>
+                                        <div id="audio-result"></div>
+                                    </div>
+
+                                    <!-- Video Analysis -->
+                                    <div class="tab-pane fade" id="video-analysis">
+                                        <form id="video-form">
+                                            <div class="mb-3">
+                                                <label for="video-caller" class="form-label">Caller ID</label>
+                                                <input type="text" class="form-control" id="video-caller" 
+                                                       placeholder="Phone number">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="video-duration" class="form-label">Duration (seconds)</label>
+                                                <input type="number" class="form-control" id="video-duration" 
+                                                       placeholder="Video duration">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="video-file" class="form-label">Video File (optional)</label>
+                                                <input type="file" class="form-control" id="video-file" 
+                                                       accept=".mp4,.avi,.mov,.mkv">
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-video"></i> Analyze Video
+                                            </button>
+                                        </form>
+                                        <div id="video-result"></div>
+                                    </div>
+
+                                    <!-- Batch Analysis -->
+                                    <div class="tab-pane fade" id="batch-analysis">
+                                        <form id="batch-form">
+                                            <div class="mb-3">
+                                                <label for="batch-file" class="form-label">Upload CSV File</label>
+                                                <input type="file" class="form-control" id="batch-file" 
+                                                       accept=".csv">
+                                                <div class="form-text">
+                                                    CSV should contain columns: type, content, sender, channel, duration
+                                                </div>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-upload"></i> Analyze Batch
+                                            </button>
+                                        </form>
+                                        <div id="batch-result"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alerts Tab -->
+                    <div class="tab-pane fade" id="alerts">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5><i class="fas fa-bell"></i> Active Alerts</h5>
+                                <button class="btn btn-sm btn-outline-primary" onclick="refreshAlerts()">
+                                    <i class="fas fa-sync"></i> Refresh
+                                </button>
+                            </div>
+                            <div class="card-body" id="alerts-list">
+                                <div class="loading text-center">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Tab -->
+                    <div class="tab-pane fade" id="statistics">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5>Processing Statistics</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="processing-chart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5>Alert Distribution</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="alert-chart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings Tab -->
+                    <div class="tab-pane fade" id="settings">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-cog"></i> System Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Detection Thresholds</h6>
+                                        <div class="mb-3">
+                                            <label for="text-threshold" class="form-label">Text Scam Threshold</label>
+                                            <input type="range" class="form-range" id="text-threshold" 
+                                                   min="0" max="1" step="0.1" value="0.7">
+                                            <div class="form-text">Current: <span id="text-threshold-value">0.7</span></div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="audio-threshold" class="form-label">Audio Fake Threshold</label>
+                                            <input type="range" class="form-range" id="audio-threshold" 
+                                                   min="0" max="1" step="0.1" value="0.6">
+                                            <div class="form-text">Current: <span id="audio-threshold-value">0.6</span></div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="video-threshold" class="form-label">Video Fake Threshold</label>
+                                            <input type="range" class="form-range" id="video-threshold" 
+                                                   min="0" max="1" step="0.1" value="0.5">
+                                            <div class="form-text">Current: <span id="video-threshold-value">0.5</span></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>System Actions</h6>
+                                        <div class="d-grid gap-2">
+                                            <button class="btn btn-outline-primary" onclick="trainModels()">
+                                                <i class="fas fa-brain"></i> Train Models
+                                            </button>
+                                            <button class="btn btn-outline-success" onclick="generateData()">
+                                                <i class="fas fa-database"></i> Generate Mock Data
+                                            </button>
+                                            <button class="btn btn-outline-info" onclick="exportData()">
+                                                <i class="fas fa-download"></i> Export Statistics
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/app.js"></script>
+</body>
+</html>
